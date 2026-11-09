@@ -1,0 +1,47 @@
+services:
+  app:
+    build: .
+    container_name: catatan_app
+    restart: unless-stopped
+    ports:
+      - "80:3000"
+    environment:
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:?DB_NAME wajib diisi}
+      DB_USER: ${DB_USER:?DB_USER wajib diisi}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+
+  database:
+    image: mysql:8.4
+    container_name: catatan_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD wajib diisi}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:
+    internal: true
+
+volumes:
+  mysql_data:
